@@ -124,8 +124,8 @@ class Server(Thread):
                 print "So jogar na funcao de compra." # self.buy(earliestMsg['param'])
 
             elif earliestMsg['type'] == 'requestDB':
-                sendDBCopy(earliestMsg['param'])
-
+                sendMsg(self.db, 'copyDB', earliest)
+                
             elif earliestMsg['type'] == 'copyDB':
                 self.db = earliestMsg['param']
 
@@ -166,15 +166,7 @@ class Server(Thread):
         return True
 
     def getDB(self):
-        self.broadcastMsg(self.port,'requestDB')
-        return True
-
-    def sendDBCopy(self,port):
-        msg = {'rl': self.rl, 'type': 'copyDB', 'param': self.db}
-        activeServer = xmlrpclib.ServerProxy('http://localhost:' + str(port))
-        activeServer.receiveMsg(self.id, msg)
-        # Atualiza relogio logico
-        self.rl = self.rl + 1
+        self.broadcastMsg(self.id,'requestDB')
         return True
 
     # Esse eh pro cliente acessar
