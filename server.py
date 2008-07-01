@@ -1,5 +1,3 @@
-# -*- coding: UTF8 -*-
-
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from threading import Thread
 from Queue import Queue
@@ -48,10 +46,10 @@ class Server(Thread):
             self.queues[str(node)] = Queue.Queue()
 
         #inicia thread para o queueProcessor
-        Thread(name="Thread Processadora das Filas", target=queueProcessor)
+        Thread(name="Thread Processadora das Filas", target=self.queueProcessor).start()
   
         #inicia thread para a servidora
-        Thread(name="Thread Servidora", target=server)
+        Thread(name="Thread Servidora", target=self.server).start()
 
     #Funcao que deixara o servidor servindo eternamente
     def server(self):
@@ -235,7 +233,7 @@ class Server(Thread):
         #     'tup': retorna lista com todos os modelos que satisfazem essa tupla
         
         # tipo: dicionario com "id", "car", "motor", "cor" e "acs" = a true ou false
-        # arg: argumento do tipo com mesmo nome de dicionario. No caso de acs, uma lista [] de acessórios
+        # arg: argumento do tipo com mesmo nome de dicionario. No caso de acs, uma lista [] de acessorios
         result = []
         newresult = []
         firstsearch = True
