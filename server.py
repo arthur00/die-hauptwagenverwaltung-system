@@ -129,7 +129,7 @@ class Server(Thread):
                 self.db = earliestMsg['param']
             # E assim por diante
 
-    def sendMsg(self, param, type):
+    def broadcastMsg(self, param, type):
         # Monta a mensagem
         msg = {'rl': self.rl, 'type': type, 'param': param}
         # Broadcast da mensagem
@@ -137,6 +137,15 @@ class Server(Thread):
             if activeServerPort <> str(self.port):
                 activeServer = xmlrpclib.ServerProxy('http://localhost:'+str(activeServerPort))
                 activeServer.receiveMsg(self.id, msg)
+        # Atualiza relogio logico
+        self.rl = self.rl + 1
+        return True
+
+    def sendMsg(self, param, type, id):
+        # Monta a mensagem
+        msg = {'rl': self.rl, 'type': type, 'param': param}
+        activeServer = xmlrpclib.ServerProxy('http://localhost:'+activeNodes[str(id)])
+        activeServer.receiveMsg(self.id, msg)
         # Atualiza relogio logico
         self.rl = self.rl + 1
         return True
@@ -150,7 +159,7 @@ class Server(Thread):
         return True
 
     def getDB(self):
-        sendMsg(self.port,'requestDB')
+        broadcastMsg(self.port,'requestDB')
         return True
 
     def sendDBCopy(self,port):
@@ -164,7 +173,7 @@ class Server(Thread):
     # Esse eh pro cliente acessar
     def sell(self, param):
         # Param == id ?!?! vcs quem sabem
-        self.sendMsg(param, "buy")
+        self.broadcastMsg(param, "buy")
         return True
 
     # Esse aqui eh o que o server acessa quando ele processa uma mensagem de compra da fila!
