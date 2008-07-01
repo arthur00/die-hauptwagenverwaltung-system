@@ -7,7 +7,8 @@ import xmlrpclib
 #  activeNodes -> {"int:id" : string:port, ... }
 #  queues      -> {"string:id" : Queue(), ... }
 #  msg         -> {"'rl'" : int:timestamp, "'type'" : string:type, "'param'" : list:args}
-#  bd          -> { , ...  }
+#  bd          -> {"string:id" : dict:car  }
+#  car         -> {"'id'" : string:id, "'car'" : string:car, "'motor'" : string:motor, "'cor'" : string:cor, "'preco'" : string:preco, "'acs'" : list of string:acs }
 
 debug = True
 
@@ -179,6 +180,7 @@ class Server(Thread):
     # Esse eh pro cliente acessar
     def sell(self, param):
         # Param == id ?!?! vcs quem sabem
+        # Tito: nao!!! param <> id
         self.broadcastMsg(param, "buy")
         return True
 
@@ -188,3 +190,136 @@ class Server(Thread):
         return True
 
 
+    # Funcao de criacao de um banco de dado
+    def makeBD():
+        makeItens()
+        i = 0
+        while i < 24:
+            self.newItem(random.choice(self.car),str(random.randint(1, 1000000)),random.choice(self.motor),random.choice(self.cor),str(random.randint(10000, 80000)), random.sample(self.acs,3))
+            i+=1
+
+    def inventory():
+        self.car = ["Gol", "Vectra", "Panzer", "Fusca", "Bicicleta", "Moto Bis", "Land Rover", "Iate", "747", "Hammer", "Gurgel"]
+        if debug: print car
+
+        self.motor = ['XTEC 1.0 Flex','AZAP 1.6 Flex', 'AMT Turbo 2.6']
+        if debug: print motor
+
+        self.cor = ["Azul", "Verde", "Vermelho", "Laranja com pintas magenta", "Ciano"]
+        if debug: print cor
+        
+        #Nao pode criar novos acessorios!!! Na verdade, tem q manter o numero exato de 6 acessorios (nao mais nem menos)...
+        self.acs = ["Foguete", "Asa", "Vidro Eletrico", "Piloto Automatico", "Sistema de Submersao", "Rodas Quadradas"]
+        if debug: print acs
+
+        return (self.car, self.motor, self.cor, self.acs)
+
+    def newItem(self,car,id,motor,cor,preco,acs):
+        newdb = {}
+        newdb["car"] = car
+        newdb["id"] = id
+        newdb["motor"] = motor
+        newdb["cor"] = cor
+        newdb["preco"] = preco
+        newdb["acs"] = acs
+        
+        if (self.db.has_key(id) == False):
+            if debug: print "Novo carro criado: " + newdb
+            self.db[id] = bd
+
+        
+    def carFinder(self, tipo, arg):
+        if debug: print "Evento Interno : Aqui se procura um produto no Banco de Dados"
+        #Tipo pode ser:
+        #     'id' : retorna especificacao do carro
+        #     'car': retorna lista com todos os modelos desse carro
+        #     'cor': retorna lista com todos os modelos dessa cor
+        #     'acs': retorna lista com todos os modelos com esse conjunto de acessorios
+        #     'tup': retorna lista com todos os modelos que satisfazem essa tupla
+        
+        # tipo: dicionario com "id", "car", "motor", "cor" e "acs" = a true ou false
+        # arg: argumento do tipo com mesmo nome de dicionario. No caso de acs, uma lista [] de acessórios
+        result = []
+        newresult = []
+        firstsearch = True
+        if (tipo.has_key("id")):
+            for k, v in self.db.iteritems():
+                if k == arg["id"]:
+                    result.append(v)
+            if (result==[]):
+                return ""
+            else:
+                firstsearch=False
+        
+        if (tipo.has_key("car")):
+            for k, v in self.db.iteritems():
+                if v["car"] == arg["car"]:
+                    if (result.count(v) > 0 or firstsearch==True):
+                        newresult.append(v)
+            if (newresult==[]):
+                return ""
+            else:
+                firstsearch=False
+                result = newresult
+                newresult = []
+        
+        if (tipo.has_key("motor")):
+            for k, v in self.db.iteritems():
+                if v["motor"] == arg["motor"]:
+                    if (result.count(v) > 0 or firstsearch==True):
+                        newresult.append(v)
+            if (newresult==[]):
+                return ""
+            else:
+                firstsearch=False
+                result = newresult
+                newresult = []
+    
+                    
+        if (tipo.has_key("cor")):
+            for k, v in self.db.iteritems():
+                if v["cor"] == arg["cor"]:
+                    if (result.count(v) > 0 or firstsearch==True):
+                        newresult.append(v)
+            if (newresult==[]):
+                return ""
+            else:
+                firstsearch=False
+                result = newresult
+                newresult = []
+                
+        if (tipo.has_key("preco")):
+            for k, v in self.db.iteritems():
+                if int(v["preco"]) < int(arg["preco"]):
+                    if (result.count(v) > 0 or firstsearch==True):
+                        newresult.append(v)
+            if (newresult==[]):
+                return ""
+            else:
+                firstsearch=False
+                result = newresult
+                newresult = []
+       
+
+        if (tipo.has_key("acs")):
+            for k, v in self.db.iteritems():
+                for x in arg["acs"]:
+                    foundall = False
+                    if v["acs"].count(x) > 0:
+                        foundall = True
+                    else:
+                        foundall = False
+                        break
+                if (foundall and (result.count(v) > 0 or firstsearch==True)):
+                    newresult.append(v)
+            if (newresult==[]):
+                return ""
+            else:
+                firstsearch=False
+                result = newresult
+                newresult = []
+        
+        if result == []:
+            return ""
+        else:
+            return result
