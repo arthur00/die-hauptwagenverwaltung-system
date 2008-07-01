@@ -40,11 +40,15 @@ list.append(Queue())
 list.append(Queue())
 list.append(Queue())
 
-Thread(name="Servidora", target=servidora)
-time.sleep(1)
+#Thread(name="Servidora", target=servidora)
+#time.sleep(1)
 
-m = xmlrpclib.ServerProxy('http://localhost:'+'8056')
-m.fillQueue()
+m = xmlrpclib.ServerProxy('http://localhost:'+'8000')
+x = m.getNewId()
+print "passou newID " + str(x)
+
+(x,y,z) = m.getActiveList(8001)
+print "passou get list " + str(x) + " " + str(y)
 
 
 #print "Queue criada"
