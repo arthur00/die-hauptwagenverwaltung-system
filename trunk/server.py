@@ -1,3 +1,5 @@
+# -*- coding: UTF8 -*-
+
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from threading import Thread
 from Queue import Queue
@@ -22,12 +24,14 @@ class Server(Thread):
             # 'porta' : id
             self.rl, self.id, self.activeNodes = self.mentor.getActiveList(self.port)
             if debug: print "Relogio Logico atual: " + str(self.rl)
-            if debug: for m, k in self.activeNodes.iteritems(): print "A porta " + k + " esta associada ao id " + str(m)
+            if debug: 
+                for m, k in self.activeNodes.iteritems(): print "A porta " + k + " esta associada ao id " + str(m)
             # Atualiza relogio logico
             self.rl = self.rl + 1
             self.db = {}
             self.getDB() 
-            if debug: for m, k in self.db.iteritems(): print "DB: Parametro: " + str(m) + " || Valor: " + srt(k)
+            if debug: 
+                for m, k in self.db.iteritems(): print "DB: Parametro: " + str(m) + " || Valor: " + srt(k)
                 
         # mentor = 0 quando se trata do primeiro servidor a ser upado.
         else:
@@ -36,7 +40,8 @@ class Server(Thread):
             self.activeNodes = {0:str(self.port)}
             self.db = {} 
             self.makeDB() # Aquela funcao de inicializar o BD aleatoriamente
-            if debug: for m, k in self.db.iteritems(): print "New DB: Parametro: " + str(m) + " || Valor: " + srt(k)
+            if debug: 
+                for m, k in self.db.iteritems(): print "New DB: Parametro: " + str(m) + " || Valor: " + srt(k)
 
         for node in self.activeNodes.keys():
             # 'id' : fila
