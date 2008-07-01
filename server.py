@@ -1,10 +1,10 @@
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from threading import Thread
+from Queue import Queue
 import xmlrpclib
-import Queue
 
 #Resumo da estrutura das principais variaveis:
-#  activeNodes -> {"string:port" : string:id, ... }
+#  activeNodes -> {"int:id" : string:port, ... }
 #  queues      -> {"string:id" : Queue(), ... }
 #  msg         -> {"'rl'" : int:timestamp, "'type'" : string:type, "'param'" : list:args}
 #  bd          -> { , ...  }
@@ -14,14 +14,14 @@ debug = True
 class Server(Thread):
     def __init__(self, port, mentor):
         self.queues = {}
-        self.port = port
+        self.port = str(port)
         if mentor <> 0:
             # Algum host ativo sera passado por parametro como mentor do novo host.
             self.myMentor = xmlrpclib.ServerProxy('http://localhost:'+str(mentor))
             # 'porta' : id
-            self.rl, self.activeNodes = self.mentor.getActiveList(self.port)
+            self.rl, self.id, self.activeNodes = self.mentor.getActiveList(self.port)
             if debug: print "Relogio Logico atual: " + str(self.rl)
-            if debug: for m, k in self.activeNodes.iteritems(): print "A porta " + m + " esta associada ao id " + k
+            if debug: for m, k in self.activeNodes.iteritems(): print "A porta " + k + " esta associada ao id " + str(m)
             # Atualiza relogio logico
             self.rl = self.rl + 1
             self.db = {}
@@ -32,16 +32,14 @@ class Server(Thread):
         else:
             self.rl = 0
             self.myMentor = None
-            self.activeNodes = {str(self.port):0}
-            self.db = {} # Aquela funcao de inicializar o BD aleatoriamente
-            self.makeDB()
+            self.activeNodes = {0:str(self.port)}
+            self.db = {} 
+            self.makeDB() # Aquela funcao de inicializar o BD aleatoriamente
             if debug: for m, k in self.db.iteritems(): print "New DB: Parametro: " + str(m) + " || Valor: " + srt(k)
 
-
-        for node in self.activeNodes.values():
+        for node in self.activeNodes.keys():
             # 'id' : fila
             self.queues[str(node)] = Queue.Queue()
-        self.id = self.activeNodes[self.port]
 
         #inicia thread para o queueProcessor
         Thread(name="Thread Processadora das Filas", target=queueProcessor)
@@ -59,25 +57,25 @@ class Server(Thread):
     #Se um servidor capotar, seu ID sera reutilizado!!!
     def getNewId(self):
         newId = 0
-        while newId in self.activeNodes.values():
+        while newId in self.activeNodes.keys():
              newId = newId + 1
         return newId
 
     #retorna o relogio logico atual e a lista de portas e id's dos servidores disponiveis
     def getActiveList(self, port):
         newId = self.getNewId()
-        self.activeNodes[str(port)] = newId
-        print "New service available in port " + str(port) + " with ID: " + str(newId) + " by mentor with ID: " + str(self.id)
+        self.activeNodes[newId] = port
+        print "New service available in port " + port + " with ID: " + str(newId) + " by mentor with ID: " + str(self.id)
 
-        for activeServerPort in self.activeNodes.keys():
+        for activeServerPort in self.activeNodes.values():
             # Atualiza dicionario de nos ativos nos outros servidores
-            if (activeServerPort <> str(port)) and (activeServerPort <> str(self.port)):
-                activeServer = xmlrpclib.ServerProxy('http://localhost:'+str(activeServerPort))
+            if (activeServerPort <> port) and (activeServerPort <> self.port):
+                activeServer = xmlrpclib.ServerProxy('http://localhost:'+activeServerPort)
                 activeServer.updadeActiveList(port,newId,self.id,self.rl)
         # Atualiza relogio logico
         self.rl = self.rl + 1
         print self.activeNodes
-        return self.rl,self.activeNodes
+        return self.rl, newId, self.activeNodes
 
     # Atualiza dicionario de nos ativos
     def updateActiveList(self, port, id, fromid, rl):
@@ -85,7 +83,7 @@ class Server(Thread):
         print "New service available in port " + str(port) + " with ID: " + id + " by mentor with ID: " + str(fromid)
         # Adiciona um novo elemento no dicionario de filas e de nos ativos
         self.queues[str(id)] = Queue.Queue()
-        self.activeNodes[str(port)] = id
+        self.activeNodes[id] = port
         # Atualiza relogio logico
         if self.rl < rl: self.rl = rl + 1
         else: self.rl = self.rl + 1
@@ -101,13 +99,15 @@ class Server(Thread):
                 if not queuesHead.has_key(str(id)):
                     if (self.queues[str(id)].isEmpty):
                         if (id == self.id):
-                            print "Quero um ACK meu mesmo"
+
+                            if debug: print "Quero um ACK meu mesmo"
                         else:
                             waiting = 0
                             # Esperando a fila ter pelo menos um ACK
                             while (self.queues[str(id)].isEmpty):
                                 if (waiting == 0):
-                                    print "Pede um ack pra "+port
+                                    if debug: print "Pede um ack pra "+port
+                                    self.sendMsg(None, "requestACK", id)
                                     waiting = 1
                     queuesHead[str(id)] = self.queues.get(str(id))
 
@@ -127,6 +127,12 @@ class Server(Thread):
 
             elif earliestMsg['type'] == 'copyDB':
                 self.db = earliestMsg['param']
+
+            elif earliestMsg['type'] == 'requestACK':
+                self.sendMsg(None, "ACK", earliest)
+
+            elif earliestMsg['type'] == 'ACK':
+                if debug: print "Acabei de receber um ACK. Estou tao feliz!!!"
             # E assim por diante
 
     def broadcastMsg(self, param, type):
@@ -159,7 +165,7 @@ class Server(Thread):
         return True
 
     def getDB(self):
-        broadcastMsg(self.port,'requestDB')
+        self.broadcastMsg(self.port,'requestDB')
         return True
 
     def sendDBCopy(self,port):
@@ -180,6 +186,5 @@ class Server(Thread):
     def buy(self,id):
         # Sei la
         return True
-
 
 
