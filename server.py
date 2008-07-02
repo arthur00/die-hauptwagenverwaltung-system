@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# -*- coding: UTF8 -*-"
+# -*- coding: UTF8 -*-
 
 
 from SimpleXMLRPCServer import SimpleXMLRPCServer
@@ -66,9 +66,9 @@ class Server(Thread):
                 # 'string:id' : fila
                 self.queues[node] = Queue.Queue()
 
+        print self.db
         #inicia thread para o queueProcessor
         Thread(name="Thread Processadora das Filas", target=self.queueProcessor).start()
-  
 
     #Funcao que deixara o servidor servindo eternamente
     def server(self):
@@ -223,13 +223,13 @@ class Server(Thread):
     def clientBuy(self, id):
         msg = {'rl': self.rl, 'type': "buy", 'param': id}
         self.queues[self.id].put(msg)
-        self.broadcastMsg(param, "buy")
+        self.broadcastMsg(id, "buy")
         return True
 
     # Esse aqui eh o que o server acessa quando ele processa uma mensagem de compra da fila!
     def serverBuy(self,id):
-        sold = self.db[id].pop()
-        print sold
+        sold = self.db.pop(id)
+        print "sold", sold
         return True
 
 
