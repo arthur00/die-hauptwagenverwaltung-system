@@ -14,7 +14,7 @@ class MainFrame(wx.Frame):
         def __init__(self, parent, id, title):
             
             frame = wx.Frame.__init__(self, parent, id, title,
-                              wx.DefaultPosition, (1024, 768))
+                              wx.DefaultPosition, (1280, 768))
     
             # Creates the Windows Division
             self.server = xmlrpclib.ServerProxy('http://localhost:8000')
@@ -164,6 +164,15 @@ class MainFrame(wx.Frame):
                 self.Searched = False
         
         def Search(self,evt):
+            if self.Searched == True:
+                self.msizer.DeleteWindows()
+                str = "die Hauptwagenverwaltung-System"
+                text = wx.StaticText(self.main, -1, str)
+                font = wx.Font(21, wx.SWISS, wx.NORMAL, wx.NORMAL)
+                text.SetFont(font)
+                self.msizer.Add(text,0,wx.CENTER|wx.TOP,30)
+                self.Searched = False
+            
             if self.Searched == False:
                 self.Searched = True
                 opcionais = []
@@ -199,17 +208,12 @@ class MainFrame(wx.Frame):
                 
                 
                 
-                #img = wx.Image(opj('img/porsche25.jpg'), wx.BITMAP_TYPE_JPEG).ConvertToBitmap()
-                #self.img_car = wx.StaticBitmap(self.main, -1, img,size=(img.GetWidth(), img.GetHeight()))
-                #self.img_car2 = wx.StaticBitmap(self.main, -1, img,size=(img.GetWidth(), img.GetHeight()))
-                
                 " Busca o carro aqui "
                 
                 
                 result = self.server.carFinder(tipo,arg)
                 self.results = wx.FlexGridSizer(cols=3, hgap=6, vgap=20)
                 
-                print "Cade o resultado!!!", result
                 
                 for item in result:
                     img = wx.Image(opj('img/porsche25.jpg'), wx.BITMAP_TYPE_JPEG).ConvertToBitmap()
@@ -224,6 +228,9 @@ class MainFrame(wx.Frame):
                     acss = wx.StaticText(self.main, -1, "Opcionais: " + opt)
                     preco = wx.StaticText(self.main, -1, "Preço à Vista: R$ " + item["preco"])
                     finaliz = wx.Button(self.main,20,"Reservar",(50,50))
+                    finaliz.Bind(wx.EVT_BUTTON, self.Finish)
+                    self.mapper = {}
+                    self.mapper[finaliz.GetId()] = item["id"]
                     resultsbox.AddMany( ( (carro,0,wx.CENTER|wx.TOP,0),  (serie,0,wx.CENTER|wx.TOP,5), (cor,0,wx.CENTER|wx.TOP,5) , (acss,0,wx.CENTER|wx.TOP,5) , (preco,0,wx.CENTER|wx.TOP,5) ))
                     self.results.AddMany([ self.img_car ,resultsbox,finaliz])
                 
@@ -265,7 +272,10 @@ class MainFrame(wx.Frame):
                 if result != "":
                     self.msizer.Add(self.results,0,wx.LEFT|wx.TOP,50)                
                     self.msizer.Layout()
-                    
+        
+        def Finish(self,evt):
+            #print self.mapper[evt.Id]            
+            self.server.clientBuy(self.mapper[evt.Id])
                 
         def End(self,evt):
             self.msizer.DeleteWindows()
