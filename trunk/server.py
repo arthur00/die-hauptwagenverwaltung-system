@@ -158,7 +158,7 @@ class Server(Thread):
 
             # Processa mensagem!
             if earliestMsg['type'] == 'buy':
-                print "So jogar na funcao de compra." # self.buy(earliestMsg['param'])
+                self.serverBuy(earliestMsg['param'])
 
             elif earliestMsg['type'] == 'requestDB':
                 print "BD requisitado"
@@ -220,15 +220,16 @@ class Server(Thread):
         return True
 
     # Esse eh pro cliente acessar
-    def sell(self, param):
-        # Param == id ?!?! vcs quem sabem
-        # Tito: nao!!! param <> id
+    def clientBuy(self, id):
+        msg = {'rl': self.rl, 'type': "buy", 'param': id}
+        self.queues[self.id].put(msg)
         self.broadcastMsg(param, "buy")
         return True
 
     # Esse aqui eh o que o server acessa quando ele processa uma mensagem de compra da fila!
-    def buy(self,id):
-        # Sei la
+    def serverBuy(self,id):
+        sold = self.db[id].pop()
+        print sold
         return True
 
 
