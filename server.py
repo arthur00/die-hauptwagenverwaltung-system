@@ -1,3 +1,7 @@
+#! /usr/bin/env python
+# -*- coding: UTF8 -*-"
+
+
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from threading import Thread
 import Queue
@@ -44,7 +48,7 @@ class Server(Thread):
                 # 'string:id' : fila
                 self.queues[node] = Queue.Queue()
                 
-            print self.activeNodes
+            #print self.activeNodes
             self.getDB()
             if debug: 
                 for m, k in self.db.iteritems(): print "DB: Parametro: " + str(m) + " || Valor: " + str(k)
@@ -68,7 +72,7 @@ class Server(Thread):
 
     #Funcao que deixara o servidor servindo eternamente
     def server(self):
-        print "Server thread started"
+        #print "Server thread started"
         self.servidor = SimpleXMLRPCServer(("localhost",int(self.port)))
         self.servidor.register_instance(self)
         self.servidor.serve_forever()
@@ -88,22 +92,22 @@ class Server(Thread):
         print "New service available in port " + port + " with ID: " + newId + " by mentor with ID: " + self.id
 
         self.queues[newId] = Queue.Queue()
-        print self.queues[newId]
+        #print self.queues[newId]
         for activeServerPort in self.activeNodes.values():
         # Atualiza dicionario de nos ativos nos outros servidores
             if (activeServerPort <> port) and (activeServerPort <> self.port):
-                print "Atualizando activeNodes de " + activeServerPort
+                #print "Atualizando activeNodes de " + activeServerPort
                 activeServer = xmlrpclib.ServerProxy('http://localhost:'+activeServerPort)
                 activeServer.updateActiveList(port,newId,self.id,self.rl)
         # Atualiza relogio logico
         self.rl = self.rl + 1
-        print self.activeNodes
+        #print self.activeNodes
         return self.rl, newId, self.activeNodes
 
     # Atualiza dicionario de nos ativos
     def updateActiveList(self, port, id, fromid, rl):
-        print "Updating Active Nodes List"
-        print "New service available in port " + port + " with ID: " + str(id) + " by mentor with ID: " + str(fromid)
+        #print "Updating Active Nodes List"
+        #print "New service available in port " + port + " with ID: " + str(id) + " by mentor with ID: " + str(fromid)
         # Adiciona um novo elemento no dicionario de filas e de nos ativos
         self.queues[id] = Queue.Queue()
         self.activeNodes[id] = port
@@ -137,10 +141,10 @@ class Server(Thread):
                                     waiting = 1
                     queuesHead[id] = self.queues[id].get()
                     #print queuesHead[id]
-            print " "
-            print "fila de queues"
-            print queuesHead
-            print " "
+            #print " "
+            #print "fila de queues"
+            #print queuesHead
+            #print " "
             # Encontra a mensagem com o menor relogio logico
             earliest = self.id
             for id,msg in queuesHead.items():
@@ -149,8 +153,8 @@ class Server(Thread):
                     earliest = id
             earliestMsg = queuesHead.pop(earliest)
 
-            print "Processando a msg"
-            print earliestMsg
+            #print "Processando a msg"
+            #print earliestMsg
 
             # Processa mensagem!
             if earliestMsg['type'] == 'buy':
@@ -176,14 +180,14 @@ class Server(Thread):
     def broadcastMsg(self, param, type):
         # Monta a mensagem
         msg = {'rl': self.rl, 'type': type, 'param': param}
-        print "Broadcasting message"
-        print msg
+        #print "Broadcasting message"
+        #print msg
         # Broadcast da mensagem
         for activeServerPort in self.activeNodes.values():
             if activeServerPort <> self.port:
                 activeServer = xmlrpclib.ServerProxy('http://localhost:'+activeServerPort)
                 activeServer.receiveMsg(self.id, msg)
-                print "Se comunicou via broadcast com o server: " + activeServerPort
+                #print "Se comunicou via broadcast com o server: " + activeServerPort
         # Atualiza relogio logico
         self.rl = self.rl + 1
         return True
@@ -191,8 +195,8 @@ class Server(Thread):
     def sendMsg(self, param, type, id):
         # Monta a mensagem
         msg = {'rl': self.rl, 'type': type, 'param': param}
-        print "Vai se comunicar com " + id
-        print msg
+        #print "Vai se comunicar com " + id
+        #print msg
         activeServer = xmlrpclib.ServerProxy('http://localhost:'+self.activeNodes[id])
         activeServer.receiveMsg(self.id, msg)
         # Atualiza relogio logico
@@ -200,8 +204,8 @@ class Server(Thread):
         return True
 
     def receiveMsg(self, id, msg):
-        print "Recebendo mensagem de " + id
-        print msg
+        #print "Recebendo mensagem de " + id
+        #print msg
         # Atualiza relogio logico
         if self.rl < msg['rl']: self.rl = msg['rl'] + 1
         else: self.rl = self.rl + 1
@@ -236,7 +240,7 @@ class Server(Thread):
     def makeDB(self):
         self.inventory()
         i = 0
-        while i < 24:
+        while i < 1000:
             self.newItem(random.choice(self.car),str(random.randint(1, 1000000)),random.choice(self.motor),random.choice(self.cor),str(random.randint(10000, 80000)), random.sample(self.acs,3))
             i+=1
 
@@ -362,7 +366,7 @@ class Server(Thread):
                 newresult = []
         
         if result == []:
-            return ""
+            return "Nao encontrou"
         else:
             return result
 
