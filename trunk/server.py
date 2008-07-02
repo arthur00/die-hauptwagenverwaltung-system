@@ -4,6 +4,7 @@ import Queue
 import sys
 import random
 import xmlrpclib
+import time
 
 #Resumo da estrutura das principais variaveis:
 #  activeNodes -> {"string:id" : string:port, ... }
@@ -67,6 +68,7 @@ class Server(Thread):
 
     #Funcao que deixara o servidor servindo eternamente
     def server(self):
+        print "Server thread started"
         self.servidor = SimpleXMLRPCServer(("localhost",int(self.port)))
         self.servidor.register_instance(self)
         self.servidor.serve_forever()
@@ -120,6 +122,7 @@ class Server(Thread):
                 if not queuesHead.has_key(id):
                     if (self.queues[id].empty()):
                         if (id == self.id):
+                            time.sleep(1)
                             msg = {'rl': self.rl, 'type': "ACK", 'param': "Cebola eh um viadinho"}
                             self.rl += 1
                             self.queues[self.id].put(msg)
@@ -134,7 +137,10 @@ class Server(Thread):
                                     waiting = 1
                     queuesHead[id] = self.queues[id].get()
                     #print queuesHead[id]
-
+            print " "
+            print "fila de queues"
+            print queuesHead
+            print " "
             # Encontra a mensagem com o menor relogio logico
             earliest = self.id
             for id,msg in queuesHead.items():
@@ -143,7 +149,8 @@ class Server(Thread):
                     earliest = id
             earliestMsg = queuesHead.pop(earliest)
 
-            #print earliestMsg
+            print "Processando a msg"
+            print earliestMsg
 
             # Processa mensagem!
             if earliestMsg['type'] == 'buy':
@@ -167,9 +174,10 @@ class Server(Thread):
             # E assim por diante
 
     def broadcastMsg(self, param, type):
-        print "Broadcasting message"
         # Monta a mensagem
         msg = {'rl': self.rl, 'type': type, 'param': param}
+        print "Broadcasting message"
+        print msg
         # Broadcast da mensagem
         for activeServerPort in self.activeNodes.values():
             if activeServerPort <> self.port:
@@ -181,9 +189,10 @@ class Server(Thread):
         return True
 
     def sendMsg(self, param, type, id):
-        print "Vai se comunicar com " + id
         # Monta a mensagem
         msg = {'rl': self.rl, 'type': type, 'param': param}
+        print "Vai se comunicar com " + id
+        print msg
         activeServer = xmlrpclib.ServerProxy('http://localhost:'+self.activeNodes[id])
         activeServer.receiveMsg(self.id, msg)
         # Atualiza relogio logico
@@ -192,9 +201,16 @@ class Server(Thread):
 
     def receiveMsg(self, id, msg):
         print "Recebendo mensagem de " + id
+        print msg
         # Atualiza relogio logico
         if self.rl < msg['rl']: self.rl = msg['rl'] + 1
         else: self.rl = self.rl + 1
+
+        if msg['type'] == 'requestACK':
+            ack = {'rl': self.rl, 'type': 'ACK', 'param': 0}
+            activeServer = xmlrpclib.ServerProxy('http://localhost:'+self.activeNodes[id])
+            activeServer.receiveMsg(self.id, ack)
+
         # Insere mensagem na fila correspondente
         self.queues[id].put(msg)
         return True
