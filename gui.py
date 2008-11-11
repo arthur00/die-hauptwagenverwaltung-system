@@ -2,6 +2,7 @@
 # -*- coding: UTF8 -*-"
 # Oh Noes!
 # Oh Yeeeaas
+# EEEEEE
 from wx import ImageFromStream, BitmapFromImage
 from wx.lib.splitter import MultiSplitterWindow
 import  string as _string
